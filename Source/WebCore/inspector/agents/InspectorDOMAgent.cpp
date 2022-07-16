@@ -183,6 +183,20 @@ static bool parseQuad(Ref<JSON::Array>&& quadArray, FloatQuad* quad)
     return true;
 }
 
+static void CollectQuads(Node* node, Vector<FloatQuad>& quads)
+{
+    Element* element = dynamicDowncast<Element>(node);
+    if (element && element->hasDisplayContents()) {
+        // display:contents elements do not render themselves, so we look into children.
+        for (auto& child : composedTreeChildren(*element))
+            CollectQuads(&child, quads);
+        return;
+    }
+    RenderObject* renderer = node->renderer();
+    if (renderer)
+        renderer->absoluteQuads(quads);
+}
+
 class RevalidateStyleAttributeTask {
     WTF_MAKE_FAST_ALLOCATED;
 public:
@@ -1774,6 +1788,16 @@ Protocol::ErrorStringOr<void> InspectorDOMAgent::scrollIntoViewIfNeeded(const St
         return makeUnexpected("Node is detached from document"_s);
 
     RenderObject* renderer = node->renderer();
+    auto* containerNode = dynamicDowncast<ContainerNode>(*node);
+    if (!renderer && containerNode) {
+        // Find the first descendant with a renderer, to account for
+        // containers without a renderer like display:contents elements.
+        for (auto& descendant : composedTreeDescendants(*containerNode)) {
+            renderer = descendant.renderer();
+            if (renderer)
+                break;
+        }
+    }
     if (!renderer)
         return makeUnexpected("Node does not have a layout object"_s);
 
@@ -1804,20 +1828,15 @@ Protocol::ErrorStringOr<Ref<JSON::ArrayOf<Protocol::DOM::Quad>>> InspectorDOMAge
     if (!node)
         return makeUnexpected("Node not found"_s);
 
-    RenderObject* renderer = node->renderer();
-    if (!renderer)
-        return makeUnexpected("Node doesn't have renderer"_s);
-
     // Ensure quads are up to date.
     m_inspectedPage.isolatedUpdateRendering();
 
-    Frame* containingFrame = renderer->document().frame();
-    FrameView* containingView = containingFrame ? containingFrame->view() : nullptr;
+    FrameView* containingView = node->document().view();
     if (!containingView)
         return makeUnexpected("Internal error: no containing view"_s);
 
     Vector<FloatQuad> quads;
-    renderer->absoluteQuads(quads);
+    CollectQuads(node, quads);
     for (auto& quad : quads)
         frameQuadToViewport(*containingView, quad, m_inspectedPage.pageScaleFactor());
     return buildArrayOfQuads(quads);
