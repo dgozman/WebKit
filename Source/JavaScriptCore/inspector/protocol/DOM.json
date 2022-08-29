@@ -582,6 +582,7 @@
             "parameters": [
                 { "name": "nodeId", "$ref": "NodeId", "optional": true, "description": "Id of the node to resolve." },
                 { "name": "objectId", "$ref": "Runtime.RemoteObjectId", "optional": true, "description": "Source element handle." },
+                { "name": "frameId", "$ref": "Network.FrameId", "optional": true, "description": "Id of the frame to resolve the owner element." },
                 { "name": "executionContextId", "$ref": "Runtime.ExecutionContextId", "optional": true, "description": "Specifies in which execution context to adopt to." },
                 { "name": "objectGroup", "type": "string", "optional": true, "description": "Symbolic group name that can be used to release multiple objects." }
             ],

@@ -1844,10 +1844,23 @@ Protocol::ErrorStringOr<Ref<JSON::ArrayOf<Protocol::DOM::Quad>>> InspectorDOMAge
     return buildArrayOfQuads(quads);
 }
 
-Protocol::ErrorStringOr<Ref<Protocol::Runtime::RemoteObject>> InspectorDOMAgent::resolveNode(std::optional<Inspector::Protocol::DOM::NodeId>&& nodeId, const String& objectId, std::optional<int>&& contextId, const String& objectGroup)
+Protocol::ErrorStringOr<Ref<Protocol::Runtime::RemoteObject>> InspectorDOMAgent::resolveNode(std::optional<Inspector::Protocol::DOM::NodeId>&& nodeId, const String& objectId, const Inspector::Protocol::Network::FrameId& frameId, std::optional<int>&& contextId, const String& objectGroup)
 {
     Protocol::ErrorString errorString;
-    Node* node = assertNode(errorString, WTFMove(nodeId), objectId);
+    Node* node = nullptr;
+    if (!!frameId) {
+        auto* pageAgent = m_instrumentingAgents.enabledPageAgent();
+        if (!pageAgent)
+            return makeUnexpected("Page domain must be enabled"_s);
+
+        auto* frame = pageAgent->assertFrame(errorString, frameId);
+        if (!frame)
+            return makeUnexpected(errorString);
+
+        node = frame->ownerElement();
+    } else {
+        node = assertNode(errorString, WTFMove(nodeId), objectId);
+    }
     if (!node)
         return makeUnexpected(errorString);
 

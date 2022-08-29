@@ -134,7 +134,7 @@ public:
     Inspector::Protocol::ErrorStringOr<std::tuple<String /* searchId */, int /* resultCount */>> performSearch(const String& query, RefPtr<JSON::Array>&& nodeIds, std::optional<bool>&& caseSensitive);
     Inspector::Protocol::ErrorStringOr<Ref<JSON::ArrayOf<Inspector::Protocol::DOM::NodeId>>> getSearchResults(const String& searchId, int fromIndex, int toIndex);
     Inspector::Protocol::ErrorStringOr<void> discardSearchResults(const String& searchId);
-    Inspector::Protocol::ErrorStringOr<Ref<Inspector::Protocol::Runtime::RemoteObject>> resolveNode(std::optional<Inspector::Protocol::DOM::NodeId>&& nodeId, const String& objectId, std::optional<int>&& contextId, const String& objectGroup);
+    Inspector::Protocol::ErrorStringOr<Ref<Inspector::Protocol::Runtime::RemoteObject>> resolveNode(std::optional<Inspector::Protocol::DOM::NodeId>&& nodeId, const String& objectId, const Inspector::Protocol::Network::FrameId& frameId, std::optional<int>&& contextId, const String& objectGroup);
     Inspector::Protocol::ErrorStringOr<Ref<JSON::ArrayOf<String>>> getAttributes(Inspector::Protocol::DOM::NodeId);
 #if PLATFORM(IOS_FAMILY)
     Inspector::Protocol::ErrorStringOr<void> setInspectModeEnabled(bool, RefPtr<JSON::Object>&& highlightConfig);
